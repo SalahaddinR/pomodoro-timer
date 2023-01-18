@@ -1,0 +1,121 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", "Arial", "sans-serif";
+}
+
+/*TEMPORARY BODY STYLES FOR DEVELOPMENT*/
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.main-clock {
+  display: grid;
+  min-width: 400px;
+  min-height: 600px;
+  grid-template-rows: 20% 60% 20%;
+  justify-items: center;
+  border-radius: 10px;
+  background-color: #FFF2F2;
+}
+.main-clock .clock-parameters {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 20% 80%;
+  justify-items: flex-start;
+  align-items: center;
+  padding: 0 40px;
+  background-color: rgba(255, 76, 76, 0.5);
+  border-radius: 10px 10px 0 0;
+}
+.main-clock .clock-parameters .session-icon {
+  background-color: rgba(255, 76, 76, 0.8);
+  color: #fff;
+  width: 80px;
+  height: 80px;
+  font-size: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;
+}
+.main-clock .clock-parameters .task-data {
+  display: grid;
+  grid-template-columns: 80% 20%;
+  align-items: flex-start;
+  color: #471515;
+}
+.main-clock .clock-parameters .task-data .task-title {
+  font-size: 24px;
+  font-weight: 600;
+}
+.main-clock .clock-parameters .task-data .task-status {
+  justify-self: flex-end;
+  padding-right: 40px;
+  padding-top: 20px;
+  font-size: 24px;
+  font-weight: 600;
+}
+.main-clock .clock-parameters .task-data .task-duration {
+  font-size: 18px;
+  font-weight: 400;
+}
+.main-clock .clock-parameters .task-data .focus-duration {
+  justify-self: flex-end;
+  padding-right: 40px;
+  font-size: 18px;
+  font-weight: 400;
+}
+.main-clock .clock-digits {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 400px;
+  flex-direction: column;
+}
+.main-clock .clock-digits span {
+  font-weight: 800;
+  font-family: "Roboto Flex", sans-serif;
+  font-size: 150px;
+  color: #471515;
+  max-height: 200px;
+  line-height: 120px;
+}
+.main-clock .clock-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  justify-items: center;
+  align-items: center;
+  gap: 40px;
+  font-size: 38px;
+  color: #471515;
+}
+.main-clock .clock-buttons .left-button {
+  justify-self: flex-end;
+}
+.main-clock .clock-buttons .right-button {
+  justify-self: flex-start;
+}
+.main-clock .clock-buttons .left-button, .main-clock .clock-buttons .right-button {
+  font-size: 30px;
+  width: 70px;
+  height: 70px;
+  background-color: rgba(255, 76, 76, 0.2);
+  border-radius: 100%;
+}
+.main-clock .clock-buttons .center-button {
+  font-size: 45px;
+  width: 100px;
+  height: 100px;
+  border-radius: 100%;
+  background-color: rgba(255, 76, 76, 0.5);
+}
+.main-clock .clock-buttons i {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}/*# sourceMappingURL=main.css.map */

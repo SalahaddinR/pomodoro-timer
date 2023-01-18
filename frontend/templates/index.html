@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro</title>
+
+    <!-- JQuert CDN connection -->
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js"
+        integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+
+    <!-- Google Font connection-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,500;8..144,900&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+    <!-- Fontawesome Icons connection-->
+    <script src="https://kit.fontawesome.com/58238a7f32.js" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css')}}">
+</head>
+
+<body>
+    <div class="main-clock">
+        <div class="clock-parameters">
+            <i class="fa-solid fa-brain session-icon"></i>
+            <div class="task-data">
+                <span class="task-title">Learning Django Framework</span>
+                <span class="task-status"></span>
+            </div>
+        </div>
+        <div class="clock-digits">
+            <span id="minutes"></span>
+            <span id="seconds"></span>
+        </div>
+        <div class="clock-buttons">
+            <i class="fa-solid fa-forward left-button" id="skip"></i>
+            <i class="fa-solid fa-play center-button" id="play"></i>
+            <i class="fa-solid fa-stop right-button" id="stop"></i>
+        </div>
+    </div>
+    
+
+    <script>
+        let TIMER_MINUTES;
+        let TIMER_SECONDS;
+
+        let MINUTE_INTERVAL;
+        let SECOND_INTERVAL;
+
+        let CURRENT_LAP;
+        let CURRENT_SESSION;
+
+        let MAX_LAP;
+        let TOTAL_LAPS = 0;
+        let INIT_HAPPENED = false;
+
+        function formatTime(minutes, seconds) {
+            return ([
+                String(minutes).length === 1 ? `0${minutes}` : minutes,
+                String(seconds).length === 1 ? `0${seconds}` : seconds,
+            ])
+        }
+
+        function switchInterfase(SESSION) {
+            switch (SESSION) {
+                case "SHORTBREAK":
+                    $(".main-clock").css({
+                        "background-color": "#f2fff5"
+                    })
+                    $(".clock-digits span").css({
+                        "color": "#14401d"
+                    })
+                    $(".left-button").css({
+                        "color": "#14401d",
+                        "background-color": "#dafae0"
+                    })
+                    $(".right-button").css({
+                        "color": "#14401d",
+                        "background-color": "#dafae0"
+                    })
+                    $(".center-button").css({
+                        "color": "#14401d",
+                        "background-color": "#8ce8a1"
+                    })
+                    $(".clock-parameters").css({
+                        "background-color": "#8ce8a1",
+                    })
+                    $(".clock-parameters *").css({
+                        "color": "#fff"
+                    })
+                    $(".session-icon").removeClass("fa-brain");
+                    $(".session-icon").addClass("fa-mug-hot");
+                    $(".session-icon").css({
+                        "background-color": "rgba(20, 64, 29, 0.4)"
+                    })
+                    break;
+                case "FOCUS":
+                    $(".main-clock").css({
+                        "background-color": "#FFF2F2"
+                    })
+                    $(".clock-digits span").css({
+                        "color": "#471515"
+                    })
+                    $(".left-button").css({
+                        "color": "#471515",
+                        "background-color": "rgba(255, 76, 76, 0.2)"
+                    })
+                    $(".right-button").css({
+                        "color": "#471515",
+                        "background-color": "rgba(255, 76, 76, 0.2)"
+                    })
+                    $(".center-button").css({
+                        "color": "#471515",
+                        "background-color": "rgba(255, 76, 76, 0.5)"
+                    })
+                    $(".clock-parameters").css({
+                        "background-color": "rgba(255, 76, 76, 0.5)",
+                    })
+                    $(".clock-parameters *").css({
+                        "color": "#471515"
+                    })
+                    $(".session-icon").removeClass("fa-mug-hot");
+                    $(".session-icon").addClass("fa-brain");
+                    $(".session-icon").css({
+                        "background-color": "rgba(255, 76, 76, 0.8)",
+                        "color": "#fff"
+                    })
+                    break;
+
+                case "LONGBREAK":
+                    $(".main-clock").css({
+                        "background-color": "#f2f9ff"
+                    })
+                    $(".clock-digits span").css({
+                        "color": "#153047"
+                    })
+                    $(".left-button").css({
+                        "color": "#153047",
+                        "background-color": "#d9eeff"
+                    })
+                    $(".right-button").css({
+                        "color": "#153047",
+                        "background-color": "#d9eeff"
+                    })
+                    $(".center-button").css({
+                        "color": "#153047",
+                        "background-color": "#8bcaff"
+                    })
+                    $(".clock-parameters").css({
+                        "background-color": "#8bcaff",
+                    })
+                    $(".clock-parameters *").css({
+                        "color": "#fff"
+                    })
+                    $(".session-icon").removeClass("fa-brain");
+                    $(".session-icon").addClass("fa-mug-hot");
+                    $(".session-icon").css({
+                        "background-color": "rgba(21, 48, 71, 0.5)"
+                    })
+                    break;
+            }
+
+
+        }
+
+        function switchSession() {
+            if (!INIT_HAPPENED) return;
+            if (CURRENT_SESSION === "FOCUS" && CURRENT_LAP < MAX_LAP) {
+                $.ajax({
+                    method: "GET",
+                    url: "http://localhost:5000/countdown-time"
+                }).then(
+                    response => {
+                        const [minutes, seconds] = formatTime(response.shortrest_minutes, response.shortrest_seconds);
+                        TIMER_MINUTES = response.shortrest_minutes;
+                        TIMER_SECONDS = response.shortrest_seconds;
+
+                        $("#minutes").html(minutes);
+                        $("#seconds").html(seconds);
+
+                        MINUTE_INTERVAL = setMinuteTimer();
+                        SECOND_INTERVAL = setSecondTimer();
+                        CURRENT_SESSION = "SHORTBREAK";
+                        CURRENT_LAP += 1; TOTAL_LAPS += 1;
+
+                        $(".task-status").html(
+                            `${TOTAL_LAPS}/${MAX_LAP}`
+                        )
+                    }
+                )
+                switchInterfase("SHORTBREAK");
+            }
+            else if (CURRENT_SESSION === "SHORTBREAK" && CURRENT_LAP <= MAX_LAP) {
+                $.ajax({
+                    method: "GET",
+                    url: "http://localhost:5000/countdown-time"
+                }).then(
+                    response => {
+                        const [minutes, seconds] = formatTime(response.focus_minutes, response.focus_seconds);
+                        TIMER_MINUTES = response.focus_minutes;
+                        TIMER_SECONDS = response.focus_seconds;
+
+                        $("#minutes").html(minutes);
+                        $("#seconds").html(seconds);
+
+                        MINUTE_INTERVAL = setMinuteTimer();
+                        SECOND_INTERVAL = setSecondTimer();
+                        CURRENT_SESSION = "FOCUS";
+
+                        $(".task-status").html(
+                            `${TOTAL_LAPS}/${MAX_LAP}`
+                        )
+                    }
+                )
+                switchInterfase("FOCUS");
+
+            }
+            else if (CURRENT_SESSION === "FOCUS" && CURRENT_LAP  === MAX_LAP) {
+                $.ajax({
+                    method: "GET",
+                    url: "http://localhost:5000/countdown-time"
+                }).then(
+                    response => {
+                        const [minutes, seconds] = formatTime(response.longrest_minutes, response.longrest_seconds);
+                        TIMER_MINUTES = response.longrest_minutes;
+                        TIMER_SECONDS = response.longrest_seconds;
+
+                        $("#minutes").html(minutes);
+                        $("#seconds").html(seconds);
+
+                        MINUTE_INTERVAL = setMinuteTimer();
+                        SECOND_INTERVAL = setSecondTimer();
+                        CURRENT_SESSION = "LONGBREAK";
+                    }
+                )
+                switchInterfase("LONGBREAK");
+            }
+            else if (CURRENT_SESSION === "LONGBREAK") {
+                $.ajax({
+                    method: "GET",
+                    url: "http://localhost:5000/countdown-time"
+                }).then(
+                    response => {
+                        const [minutes, seconds] = formatTime(response.focus_minutes, response.focus_seconds);
+                        TIMER_MINUTES = response.focus_minutes;
+                        TIMER_SECONDS = response.focus_seconds;
+
+                        $("#minutes").html(minutes);
+                        $("#seconds").html(seconds);
+
+                        MINUTE_INTERVAL = setMinuteTimer();
+                        SECOND_INTERVAL = setSecondTimer();
+                        CURRENT_SESSION = "FOCUS";
+                        CURRENT_LAP = 0;
+                    }
+                )
+
+                switchInterfase("FOCUS");
+            }
+        }
+
+        function setMinuteTimer() {
+            const number = setInterval(
+                () => {
+                    if (TIMER_MINUTES <= 0) {
+                        clearInterval(MINUTE_INTERVAL);
+                        clearInterval(SECOND_INTERVAL);
+                        $("#seconds").html("00");
+                        switchSession();
+                    }
+                    if (TIMER_MINUTES > 0) {
+                        TIMER_MINUTES -= 1;
+
+                        const [minutes, seconds] = formatTime(TIMER_MINUTES, TIMER_SECONDS);
+                        $("#minutes").html(minutes);
+                    }
+                }, 60000
+            )
+            return number;
+        }
+
+        function setSecondTimer() {
+            const number = setInterval(
+                () => {
+                    if (TIMER_MINUTES > 0 && TIMER_SECONDS === 0) {
+                        TIMER_SECONDS = 59;
+                        TIMER_MINUTES -= 1;
+                    }
+                    else if (TIMER_MINUTES >= 0 && TIMER_SECONDS > 0) {
+                        TIMER_SECONDS -= 1;
+                    }
+                    const [minutes, seconds] = formatTime(TIMER_MINUTES, TIMER_SECONDS);
+                    $("#minutes").html(minutes);
+                    $("#seconds").html(seconds);
+                }, 1000
+            )
+            return number;
+        }
+
+
+        $(document).ready(
+            () => {
+                $.ajax({
+                    method: 'GET',
+                    url: "http://localhost:5000/countdown-time"
+                }).then(
+                    response => {
+                        const [minutes, seconds] = formatTime(response.focus_minutes, response.focus_seconds);
+                        TIMER_MINUTES = response.focus_minutes;
+                        TIMER_SECONDS = response.focus_seconds;
+                        CURRENT_SESSION = "FOCUS"; CURRENT_LAP = 1;
+                        MAX_LAP = response.laps; TOTAL_LAPS = 1;
+
+                        $("#minutes").html(minutes);
+                        $("#seconds").html(seconds);
+
+                        $(".task-status").html(
+                            `${TOTAL_LAPS}/${MAX_LAP}`
+                        )
+                    }
+                )
+
+                
+            }
+        )
+
+        $(".clock-buttons").on("click", "#play", (event) => {
+            $("#play").removeClass("fa-play");
+            $("#play").addClass("fa-pause");
+
+            MINUTE_INTERVAL = setMinuteTimer();
+            SECOND_INTERVAL = setSecondTimer();
+
+            INIT_HAPPENED = true;
+
+            document.getElementById("play").id = "pause";
+        })
+
+        $(".clock-buttons").on("click", "#pause", (event) => {
+            $("#pause").removeClass("fa-pause");
+            $("#pause").addClass("fa-play");
+
+            clearInterval(MINUTE_INTERVAL);
+            clearInterval(SECOND_INTERVAL);
+
+            document.getElementById("pause").id = "play";
+        })
+
+        $(".clock-buttons").on("click", "#skip", (event) => {
+            if (!INIT_HAPPENED) return;
+            clearInterval(MINUTE_INTERVAL);
+            clearInterval(SECOND_INTERVAL);
+            switchSession();
+        })
+        $(".clock-buttons").on("click", "#stop", (event) => {
+            if (!INIT_HAPPENED) return;
+            clearInterval(MINUTE_INTERVAL);
+            clearInterval(SECOND_INTERVAL);
+
+            $.ajax({
+                method: "GET",
+                url: "http://localhost:5000/countdown-time"
+            }).then(
+                response => {
+                    const [minutes, seconds] = formatTime(response.focus_minutes, response.focus_seconds);
+                    TIMER_MINUTES = response.focus_minutes;
+                    TIMER_SECONDS = response.focus_seconds;
+
+                    $("#minutes").html(minutes);
+                    $("#seconds").html(seconds);
+
+                    CURRENT_SESSION = "FOCUS"; CURRENT_LAP = 0;
+                }
+            )
+
+            $("#pause").removeClass("fa-pause");
+            $("#pause").addClass("fa-play");
+            switchInterfase("FOCUS")
+            document.getElementById("pause").id = "play";
+        })
+    </script>
+</body>
+
+</html>
